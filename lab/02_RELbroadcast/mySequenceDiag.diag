@@ -1,0 +1,24 @@
+{
+	activation = none;
+	0 -> 0 [label = "TIME: 0.00 DELIVERED"];
+	0 -> 3 [diagonal,label = "TIME: 0.27"];
+	3 -> 3 [label = "TIME: 0.27 DELIVERED"];
+	0 -> 4 [diagonal,label = "TIME: 0.41"];
+	4 -> 4 [label = "TIME: 0.41 DELIVERED"];
+	0 -> 1 [diagonal,label = "TIME: 0.59"];
+	1 -> 1 [label = "TIME: 0.59 DELIVERED"];
+	0 -> 2 [diagonal,label = "TIME: 0.71"];
+	2 -> 2 [label = "TIME: 0.71 DELIVERED"];
+	3 -> 1 [diagonal,label = "TIME: 0.75"];
+	3 -> 4 [diagonal,label = "TIME: 0.82"];
+	1 -> 3 [diagonal,label = "TIME: 1.24"];
+	3 -> 2 [diagonal,label = "TIME: 1.34"];
+	2 -> 4 [diagonal,label = "TIME: 1.55"];
+	1 -> 2 [diagonal,label = "TIME: 1.72"];
+	4 -> 1 [diagonal,label = "TIME: 1.72"];
+	4 -> 3 [diagonal,label = "TIME: 1.77"];
+	4 -> 2 [diagonal,label = "TIME: 1.83"];
+	2 -> 3 [diagonal,label = "TIME: 1.92"];
+	1 -> 4 [diagonal,label = "TIME: 2.00"];
+	2 -> 1 [diagonal,label = "TIME: 2.18"];
+}
