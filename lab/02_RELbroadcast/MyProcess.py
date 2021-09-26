@@ -73,7 +73,7 @@ class MyProcess():
             else:
                 dests = list(set(set(self.G.nodes()) - {src}) - {self.id})
                 self.r_broadcast(msg, dests, time)
-                self.deliver(msg, self.sched.elapsed_time)
+                self.deliver(msg, self.sched.elapsed_time())
             # if message already delivered...
                 # dont do anything if already have the message
                 # use the delivered{} attribute of this Process instance to keep track of received messages
