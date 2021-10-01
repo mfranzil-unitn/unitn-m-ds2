@@ -13,14 +13,14 @@ class MyProcess():
 
     def log(self, src, dest, label, options=[]):
         if options:
-            optstring = ",".join(options) + ','
+            optstring = ",".join(options)+','
         else:
             optstring = ""
         self.out.write(
             "\t{} -> {} [{}label = \"{}\"];\n".format(src, dest, optstring, label))
 
     def create_send_event(self, dest, msg):
-        return self.id, dest, msg
+        return (self.id, dest,  msg)
 
     def crash(self, time):
         print("\t{} crashed!".format(self.id))
@@ -30,15 +30,16 @@ class MyProcess():
 
     def r_broadcast(self, msg, dests, time):
         print("{} r-sending to: {}".format(self.id, dests))
-
         for q in dests:
+            # simulate crash of sender
+            print("\t{} --attempt--> {}".format(self.id, q))
             if not self.crashed:
-                if random.uniform(0, 1) <= self.G.nodes[self.id]['crashP']:
-                    self.crash(time=time)
-                    return
-                else:
+                if random.random() > self.G.nodes[self.id]['crashP']:
                     ev = self.create_send_event(q, msg)
                     self.sched.schedule_event(time + random.random(), ev)
+                else:
+                    self.crash(time=time)
+                    return
         if not self.crashed:
             self.deliver(msg, time)
 
@@ -46,19 +47,19 @@ class MyProcess():
         # Do not process message if already crashed
         if self.crashed:
             return
-        # Simulate link failure (as for BEB...)
-        if random.uniform(0, 1) <= self.G[src][self.id]["lossP"]:
-            # packet lost
-            self.log(src, self.id, "TIME: {:.2f}".format(time), ["failed", "diagonal"])
-            return
-        else:
-            # Here we got the message...
+        # Simulate link failure
+        if random.random() > self.G[src][self.id]['lossP']:
+            # Here we got the message
             self.log(src, self.id, "TIME: {:.2f}".format(time), ["diagonal"])
             if msg in self.delivered:
                 # dont do anything if already have the message
                 return
-            dests = list(set(self.G.nodes() - {self.id, src}))
-            self.r_broadcast(msg, dests, time)
+            others = list(set(self.G.nodes() - {self.id, src}))
+            self.r_broadcast(msg, others, time)
+        else:
+            # packet lost
+            self.log(src, self.id, "TIME: {:.2f}".format(time), ["failed", "diagonal"])
+            return
 
     def deliver(self, msg, time):
         if msg not in self.delivered:

@@ -27,6 +27,7 @@ def drawgraph(G, title):
 
 
 def simulate_r_broadcast(G, processes, sched):
+
     # Initialize simulation picking random first transmitter
     src = random.choice(list(G.nodes()))
     msg = random.randint(0, 1000)
@@ -37,7 +38,7 @@ def simulate_r_broadcast(G, processes, sched):
     # Create first events to be place in the event queue :)
     processes[src].r_broadcast(msg, others, time=0)
 
-    while len(sched.queue) > 0:
+    while (len(sched.queue) > 0):
         # some process should simulate reception
         src, dest, msg = sched.pop_event()
         print("TIME={:.3f}: {} --[{}]--> {}".format(sched.elapsed_time(), src, msg, dest))
@@ -54,14 +55,14 @@ def main():
 
     # Check out seqdiag 
     # http://blockdiag.com/en/seqdiag/introduction.html
-    output_diag = open("mySequenceDiag.diag", 'w')
-    output_diag.write("{\n")
-    output_diag.write("\tactivation = none;\n")
+    outputDiag = open("mySequenceDiag.diag", 'w')
+    outputDiag.write("{\n")
+    outputDiag.write("\tactivation = none;\n")
 
     # create the network
     N = 5
     G = nx.complete_graph(N)
-    processes = [MyProcess(id, sched, G, output_diag) for id in range(N)]
+    processes = [MyProcess(id, sched, G, outputDiag) for id in range(N)]
 
     # Set Link Model
     fair_loss(G, lossP=args.lossP)
@@ -81,8 +82,8 @@ def main():
     # Redraw after broadcast
     drawgraph(G, "After broadcast")
 
-    output_diag.write("}\n")
-    output_diag.close()
+    outputDiag.write("}\n")
+    outputDiag.close()
 
 
 if __name__ == '__main__':

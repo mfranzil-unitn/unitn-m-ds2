@@ -1,0 +1,8 @@
+{
+	activation = none;
+	0 -> 0 [label = "TIME: 0.00 DELIVERED"];
+	0 -> 2 [failed,diagonal,label = "TIME: 0.27"];
+	0 -> 1 [failed,diagonal,label = "TIME: 0.50"];
+	0 -> 4 [failed,diagonal,label = "TIME: 0.58"];
+	0 -> 3 [failed,diagonal,label = "TIME: 0.75"];
+}
