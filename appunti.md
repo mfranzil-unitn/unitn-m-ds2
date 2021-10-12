@@ -99,4 +99,4 @@ See the slides for the compartmental mode analysis, which features the calculati
 
 ### Rumor mongering 
 
-I was bored, so I stopped taking notes. It is easy, look at the slides
+I was bored, so I stopped taking notes. It is easy, look at the slides.

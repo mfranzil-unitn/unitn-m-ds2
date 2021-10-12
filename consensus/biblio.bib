@@ -1,0 +1,55 @@
+@techreport{10.5555/889891,
+author = {Fischer, M. J. and Lynch, N. A. and Paterson, M. S.},
+title = {IMPOSSIBILITY OF DISTRIBUTED CONSENSUS WITH ONE FAULTY PROCESS},
+year = {1982},
+publisher = {Massachusetts Institute of Technology},
+address = {USA},
+abstract = {The consensus problem involves an asynchronous system of processes, some of which
+may be unreliable. The problem is for the reliable processes to agree on a binary
+value. We show that every protocol for this problem has the possibility of nontermination,
+even with only one faulty process. By way of contrast, solutions are known for the
+synchronous case, the "Byzantine Generals" problem.}
+}
+
+@InProceedings{10.1007/3-540-48169-9_4,
+author="Most{\'e}faoui, Achour
+and Raynal, Michel",
+editor="Jayanti, Prasad",
+title="Solving Consensus Using Chandra-Toueg's Unreliable Failure Detectors: A General Quorum-Based Approach",
+booktitle="Distributed Computing",
+year="1999",
+publisher="Springer Berlin Heidelberg",
+address="Berlin, Heidelberg",
+pages="49--63",
+abstract="This paper addresses the Consensus problem in asynchronous distributed systems (made of n processes, at most f of them may crash) equipped with unreliable failure detectors. A generic Consensus proto- col is presented: it is quorum-based and works with any failure detector belonging to the class S (provided that f ≤ n -- or to the class ◊S (provided that f < n/2). This quorum-based generic approach for solv- ing the Consensus problem is new (to our knowledge). Moreover, the proposed protocol is conceptually simple, allows early decision and uses messages shorter than previous solutions.",
+isbn="978-3-540-48169-0"
+}
+
+
+
+@article{10.1145/234533.234549,
+author = {Chandra, Tushar Deepak and Hadzilacos, Vassos and Toueg, Sam},
+title = {The Weakest Failure Detector for Solving Consensus},
+year = {1996},
+issue_date = {July 1996},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {43},
+number = {4},
+issn = {0004-5411},
+url = {https://doi.org/10.1145/234533.234549},
+doi = {10.1145/234533.234549},
+abstract = {We determine what information about failures is necessary and sufficient to solve
+Consensus in asynchronous distributed systems subject to crash failures. In Chandra
+and Toueg [1996], it is shown that W, a failure detector that provides surprisingly
+little information about which processes have crashed, is sufficient to solve Consensus
+in asynchronous systems with a majority of correct processes. In this paper, we prove
+that to solve Consensus, any failure detector has to provide at least as much information
+as W. Thus, W is indeed the weakest failure detector for solving Consensus in asynchronous
+systems with a majority of correct processes.},
+journal = {J. ACM},
+month = jul,
+pages = {685–722},
+numpages = {38},
+keywords = {agreement problem, commit problem, failure detection, processor failures, Byzantine Generals' problem, crash failures, atomic broadcast, partial synchrony, asynchronous systems, consensus problem, fault-tolerance, message passing}
+}

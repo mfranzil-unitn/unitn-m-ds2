@@ -1,6 +1,7 @@
 \documentclass[a4paper,11pt,hidelinks]{article}
 %\usepackage[a-1b]{pdfx}
 \usepackage{hyperref}
+\usepackage{bookmark}
 
 \usepackage{subfiles}
 \usepackage{epsfig}
@@ -26,7 +27,7 @@
 \newtheorem{corollary}{Corollary}[theorem]
 \newtheorem{lemma}{Lemma}[theorem]
 
-\hypersetup{colorlinks=true, urlcolor=blue}
+\hypersetup{colorlinks=false, urlcolor=blue}
 
 \captionsetup{
   justification=centering,
@@ -49,11 +50,17 @@
 
 \title{Impossibility of Distributed Consensus}
 \author{Distributed Systems 2 \\
-    (original author: Alberto Montresor \texttt{<alberto.montresor@unitn.it>}}) \\
+    (original author: Alberto Montresor \texttt{<alberto.montresor@unitn.it>}) \\
     Matteo Franzil \texttt{<matteo.franzil@studenti.unitn.it>}}
 \maketitle
 
-\section{Problem Description}
+\tableofcontents
+
+\newpage
+
+\section{Impossibility Result}
+
+\subsection{Problem Description}
 
 The problem of consensus can be formulated as following:
 
@@ -62,13 +69,13 @@ The problem of consensus can be formulated as following:
     \item they must decide, reaching an agreement, one of the proposed values.
 \end{itemize}
 
-In this paper, we analyze the result given by the paper by Fischer, Lynch, Paterson, that says that no algorithms can solve consensus in an asynchronous distributed system in which a single process may crash. Another important paper in the literature is the one by Chandra and Toeug, that shows how consensus can be solved in asynchronous distributed systems provided with a failure detector, even if processes may crash.
+In this paper, we analyze the result given by the paper by Fischer, Lynch, Paterson \cite{10.5555/889891}, that says that no algorithms can solve consensus in an asynchronous distributed system in which a single process may crash. Another important paper in the literature is the one by Chandra and Toeug \cite{10.1145/234533.234549}, that shows how consensus can be solved in asynchronous distributed systems provided with a failure detector, even if processes may crash.
 
 The first paper has a strong system model, but faulty processes and weak consensus model; the opposite is true for the second paper.
 
 The point of all of this is that it's easy to reach a decision (well, at least theoretically) when the networks and the processes are perfectly functioning, but in real distributed systems, both can fail and lead to weird results. In particular, for the moment we will analyze the case of normal crash and omission failures, and not Byzantine failures. Still, we are not able to solve the problem even with normal failures!
 
-\section{Preliminaries}
+\subsection{Preliminaries}
 
 \begin{itemize}
     \item $\Pi = {P_1, \cdots, P_n}$ is the set of processes
@@ -142,7 +149,7 @@ We can assess that no matter what protocol, bad or good, we come up with, we can
 
 \noindent Our system is very powerful and extensible: we consider only 0/1 decisions (but can be easily adapted) and the set of processes is globally known. Still, our system is asynchronous, and this will cause some issues.
 
-\section{Theorem}
+\subsection{Theorem}
 
 \begin{theorem}[Impossibility of Distributed Consensus]
     No consensus protocol is totally correct if a single crash is possible.
@@ -311,7 +318,7 @@ The proof follows from the definition of applicability, as $s_1$ and $s_2$ do no
     on the observation that a given process $p_i$ is crashed, can be contradicted by a later action of process $p_i$.
 \end{proof}
 
-\section{Conclusion}
+\subsection{Conclusion}
 
 We prove now that given a totally correct protocol P, it is always possible to build an admissible run which is not deciding; a contradiction. We cannot “crash” more than one process; which means that the other processes must execute an infinite number of actions.
 
@@ -327,7 +334,7 @@ Elements:
               \item $\bot$ if none present
           \end{itemize}
     \item Using Lemma 3, we build a bivalent configuration $C_i$ starting from $C_{i−1}$ and $e_i$.
-    \item We remove the process from the front of the queue and we re-insert it at theend.
+    \item We remove the process from the front of the queue and we re-insert it at the end.
 \end{itemize}
 
 Final results:
@@ -338,5 +345,118 @@ $$
 
 Infinite run, with no process failures, in which we never decide.
 
+\section{Beyond Impossibility Results}
+
+Assume we now want to adapt the model in order to make its implementation feasible. Indeed, the model and the properties are the same as the ones described as before. Consensus in such systems is impossible, even if at most a process crashes and the links are reliable. So, either we change the specification or we change the model (better!). This allows us to conceive what is the minimal set of requirements for correctly building a consensus model.
+
+We design our protocol in order to be first safe, then with liveness. In order to move towards our goal, we can add randomized algorithms, failure detectors, or both. They are called \textit{oracles}, and they are modular, in the sense that their design is independent of the algorithm we're adapting it to.
+
+\subsection{Failure detectors}
+
+A failure detector is a distributed oracle whose goal is to tell processes \textit{hints} about the state of other processes in the systems (if they're up or down). But hints may be incorrect, the FD may give different data to different processes, or change its mind several times.
+
+Then why we use unreliable detectors? We abstract everything and use a modular decomposition, so that its properties can be used to show correctness no matter what the situation. In other words, if the algorithm works in this unreliable situation, it always works.
+
+What is the weakest failure detector needed to solve the problem (in an asynchronous system)?
+
+Let us assume the existence of a global clock, not accessible by the single processes. A failure pattern is a function $F: \mathcal{T} \rightarrow 2^{\Pi}$, where $F(t)$ is the set of processes that have crashed through time t: $\forall t \in T: F(t) \subseteq F(t+1)$
+
+The crashed set is the union of $F(t)$ over all the ticks, and the correct set is its complement.
+
+A failure detector history is a function $H: \Pi \times \mathcal{T} \rightarrow 2^{\Pi}$, where $H(p, t)$ is the output of the failure detector of process $p$ at time $t$. If $q \in H(p, t)$, then we say $p$ suspects $q$ at time $t$ in $H$.
+
+The idea of suspicion is backed up by two properties, completeness and accuracy. Completeness may be either strong (if every faulty process is permanently suspected by every correct process) or weak (if only some processes will do eventually).
+
+\begin{align}
+    \textit{(strong)}\quad\quad \forall F, & \forall H, \exists t \in \mathcal{T} , \forall p \in crashed(F), \forall q \in correct(F), \forall t' \ge t : p \in H(q, t') \\
+    \textit{(weak)}\quad\quad \forall F,   & \forall H, \exists t \in \mathcal{T} , \forall p \in crashed(F), \exists q \in correct(F), \forall t' \ge t : p \in H(q, t')
+\end{align}
+
+On the other hand, accuracy tells us that \textit{every} correct process is never suspected. The weak version tells us that \textit{some} correct process is never suspected.
+
+\begin{align}
+    \textit{(strong)}\quad\quad \forall F, & \forall H, \forall \in \mathcal{T}, \forall p \in correct(F), \forall q: p \notin H(q, t) \\
+    \textit{(weak)}\quad\quad \forall F,   & \forall H, \forall \in \mathcal{T}, \exists p \in correct(F), \forall q: p \notin H(q, t)
+\end{align}
+
+The eventual versions of strong accuracy and weak accuracy tells us that unlike never, processes get suspected \textit{eventually}.
+
+By mixing and matching accuracy and completeness, we can get different flavours of failure detectors. As a general idea, strong completeness and accuracy yields \textit{perfect} FDs, weak accuracy and strong completeness yield \textit{strong} FDs (the opposite is not important for us), weak and weak yield \textit{weak} FDs. We can build reductions between them, and in particular reduction from $P$ to $S$ to $W$, and from them to their eventual versions (called $\diamond P/S/W)$). Using another reduction, we can for example jump from weak to strong completeness - the opposite of before, and also for the eventual version, and we can show they're actually equivalent: $W \ge S, S \ge W \Rightarrow S \equiv W$.
+
+\subsubsection{Back to reliable broadcast}
+
+We can modify our reliable broadcast to add eventual strong failure detectors ($\diamond S$). If a process is faulty, then it is inserted into a set of sussy processes by the detector, and the processes eventually receive this information (correctly) by the detector, and will alert the original process. Else, if the process is correct, the message will arrive as it is since the channels are perfect.
+
+In order to properly implement this in our reliable broadcast, we need an eventually perfect FD as accurate as possible in order to reduce the number of re-transmissions (since it's usually linear without crashes, but explodes if someone does not report).
+
+However, is perfect failure detection really necessary? The answer is no! Even eventually strong failure detectors at first output arbitrary information, but given the eventuality, there a time in which every process that crashes is suspected, and some process that does not crash is suspected. If $f < \frac{n}{2}$, $\diamond S$ is necessary and sufficient to solve consensus. Also, remember that $\diamond S \equiv \diamond W$
+
+\subsubsection{Rotating coordinators}
+
+The protocol described here is based on Most{\'e}faoui and Raynal \cite{10.1007/3-540-48169-9_4}
+
+Assume we have processes are numbered $0, 1, \cdots, n - 1$. They execute asynchronous rounds. In round $r$, the coordinator - which corresponds to process $r mod n$ - tries to impose its estimate as the consensus value. It succeeds if does not crash and it is not suspected by $\diamond S$.
+
+With $\diamond S$, no process blocks forever waiting for a message from a dead coordinator. Given that $f < n/2$, eventually every node will receive more than $\lfloor n / 2 \rfloor$ messages and will exit from Phase 2. But since our model is eventual, some correct process $p_c$ will be not falsely suspected (eventually). When it will be his turn, every correct process will receive $c$'s estimate and will decide. This assures us that the process will terminate.
+
+Assume a process $p$ decides $v$ and then crashes. It did so because a majority of messages and decided $v$. Then eventually, another process will decide $v$, since the two majorities important for the decision have their intersection not empty (due to definition of majority).
+
+But what if the FD misbehaves? Well, we cannot satisfy accuracy: the word \textit{eventually} has a very strong connotation, which is in stark contrast with \textit{never}. If a process stays correct in a period of time long enough for the completion of the protocol, then it will succeed. Still, the algorithm remains safe (as completeness is always satisfied), we just have to wait for a good FD period.
+
+An \textbf{indulgent algorithm} - such as the one above - is one that never violates the safety property and rather terminates in case of problems with FDs.
+
+Slides give an insight on possible practical applications of the protocol.
+
+\subsection{Randomization}
+
+Randomization is another approach for solving consensus, which changes the underlying model. Assume we need to solve binary consensus. This protocol achieves probabilistic termination, with $f$-correctness ($f < n/2$), and upper bound $O(2^{2n})$.
+
+\subsubsection{Ben-Or's Algorithm}
+
+This algorithm operates in rounds, each round has two phases:
+\begin{itemize}
+    \item Report phase - each process transmits its value, and waits to hear from other processes
+    \item Decision phase - if majority found, take its value; otherwise, flip a coin to change the local value
+\end{itemize}
+
+The idea is based on the fact that if enough processes detected the majority, decide. If I know that someone detected majority, switch to the majority’s value; otherwise, flip a coin. Eventually, a majority of correct processes will flip in the same way.
+\medskip\\
+\noindent \textbf{Uniform Agreement}: At most one value can receive majority in the first phase of a round.
+\begin{itemize}
+    \item if some process sees $f + 1$ $\langle proposal, r, v \notin i \rangle$, then every process sees at least one $\langle proposal, r, v \notin i\rangle$ message
+    \item if every process sees at least one $\langle proposal, r, v \notin i\rangle$ message, then \begin{itemize}
+              \item every process changes its estimate to v
+              \item every process reports $v$ in the first phase of round $r + 1$
+          \end{itemize}
+    \item if every process reports $v$ in the first phase of round $r + 1$, every process decides $v$ in the second phase of round $r + 1$
+\end{itemize}
+\textbf{Validity} If there are two distinct values at the beginning, one of them will be chosen
+\begin{itemize}
+    \item Otherwise, if all processes report their common value $v$ at round 0, then: \begin{itemize}
+              \item all processes send $\langle proposal, 0, v\rangle $
+              \item all processes decide on the second phase of round 0
+          \end{itemize}
+
+\end{itemize}
+\textbf{Termination}: If no process sees the majority value, then they all will flip coins, and start everything again.
+\begin{itemize}
+    \item Eventually a majority among the correct processes flips the same random value: \begin{itemize}
+              \item The correct processes will observe the majority value.
+              \item The correct processes will propagate proposal messages, containing the majority value
+          \end{itemize}
+
+    \item Correct processes will receive the proposal messages, and the protocol finishes
+\end{itemize}
+
+Finally, these two approaches can be combined in a hybrid system. During bad FD periods, the coin flip system can be made available to processes in order to let processes continue and try to make a decision quicker.
+
 \endgroup
+
+\newpage
+
+\addcontentsline{toc}{section}{Bibliography}
+
+\bibliographystyle{apalike}
+\bibliography{biblio}
+
 \end{document}
