@@ -1,9 +1,8 @@
+import matplotlib
+import matplotlib.pyplot as plt
 from mesa.batchrunner import BatchRunner
 
 from model.money_model import MoneyModel, compute_gini
-
-import matplotlib.pyplot as plt
-import matplotlib
 
 fixed_params = {
     "width": 10,

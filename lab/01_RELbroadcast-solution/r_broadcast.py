@@ -1,7 +1,8 @@
-import networkx as nx
 import random
-import matplotlib.pyplot as plt
 from argparse import ArgumentParser
+
+import matplotlib.pyplot as plt
+import networkx as nx
 
 from EventScheduler import EventScheduler
 from MyProcess import MyProcess
@@ -27,13 +28,12 @@ def drawgraph(G, title):
 
 
 def simulate_r_broadcast(G, processes, sched):
-
     # Initialize simulation picking random first transmitter
     src = random.choice(list(G.nodes()))
     msg = random.randint(0, 1000)
 
     others = list(set(G.nodes() - {src}))
-    
+
     print("START simulation")
     # Create first events to be place in the event queue :)
     processes[src].r_broadcast(msg, others, time=0)

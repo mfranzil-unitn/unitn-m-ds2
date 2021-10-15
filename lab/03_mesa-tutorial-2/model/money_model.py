@@ -32,7 +32,8 @@ class MoneyModel(Model):
             self.grid.place_agent(a, (x, y))
 
         self.datacollector = DataCollector(
-            model_reporters={"Gini": compute_gini}, #, 'OtherInterestingVariable': myvariablereporter  # `compute_gini` defined above
+            model_reporters={"Gini": compute_gini},
+            # , 'OtherInterestingVariable': myvariablereporter  # `compute_gini` defined above
             agent_reporters={"Wealth": "wealth"})
 
     def step(self):

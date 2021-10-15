@@ -1,8 +1,9 @@
-import networkx as nx
 import random
-import numpy as np
-import matplotlib.pyplot as plt
 from argparse import ArgumentParser
+
+import matplotlib.pyplot as plt
+import networkx as nx
+import numpy as np
 
 FINITE_DUPLICATION = 100
 

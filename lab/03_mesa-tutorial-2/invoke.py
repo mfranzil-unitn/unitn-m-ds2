@@ -1,14 +1,14 @@
-from model.money_model import MoneyModel
-import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-import code
+import numpy as np
+
+from model.money_model import MoneyModel
 
 model = MoneyModel(50, 10, 10)
 for i in range(200):
     model.step()
 
-#code.interact(local=dict(globals(), **locals()))
+# code.interact(local=dict(globals(), **locals()))
 
 # gini = model.datacollector.get_model_vars_dataframe()
 # gini.plot()

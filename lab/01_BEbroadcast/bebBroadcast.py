@@ -1,8 +1,9 @@
-import networkx as nx
 import random
-import numpy as np
-import matplotlib.pyplot as plt
 from argparse import ArgumentParser
+
+import matplotlib.pyplot as plt
+import networkx as nx
+import numpy as np
 
 FINITE_DUPLICATION = 100
 
@@ -45,7 +46,7 @@ def send(G, source, dest, color):
     for i in range(FINITE_DUPLICATION):
         if random.uniform(0, 1) < G[source][dest]["repP"]:
             rep_c += 1
-            #print(f"Message {source} -> {dest} repeated!")
+            # print(f"Message {source} -> {dest} repeated!")
 
     # Simulate delivery
     for i in range(rep_c):
@@ -60,7 +61,7 @@ def beb(G):
 
     # Random color as message, we draw in that color nodes that deliver the message
     rc = '#%02x%02x%02x' % tuple(np.random.randint(256, size=3))
-    
+
     # For all processes (graph nodes) but me...
     # Simulate send to that process/node
     for i in set(set(G.nodes()) - {p}):
@@ -69,6 +70,7 @@ def beb(G):
         else:
             print(f"Node {p} crashed!")
             return
+
 
 def main():
     args = parser.parse_args()
@@ -87,7 +89,7 @@ def main():
     nx.set_node_attributes(G, 0, "RCV")
 
     # Draw graph before Broadcast
-    #drawgraph(G, "Before broadcast")
+    # drawgraph(G, "Before broadcast")
 
     # Simulate Best-Effort Broadcast
     beb(G)
@@ -100,7 +102,7 @@ def main():
     print(f"Average reception rate: {sum(med) / (len(med) - 1)}")
 
     # Redraw after broadcast
-    #drawgraph(G, "After broadcast")
+    # drawgraph(G, "After broadcast")
 
 
 if __name__ == '__main__':
