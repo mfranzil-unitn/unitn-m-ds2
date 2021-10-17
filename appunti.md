@@ -99,4 +99,18 @@ See the slides for the compartmental mode analysis, which features the calculati
 
 ### Rumor mongering 
 
-I was bored, so I stopped taking notes. It is easy, look at the slides.
+In rumor mongering, nodes are initially susceptible, as usual. When a node receives an update it becomes infective, and starts spreading the rumor incontrollably: every set amount of time, it sends such rumor to a node. When the hype dies off, the node will lose interest in spreading the rumor and become removed. This approach is doable for one or more updates. In order to decide the policy of loss of interest, one can decide:
+
+- When: Counter vs coin (random)
+  - Coin (random): lose interest with probability 1/k
+  - Counter: lose interest after k contacts
+- Why: Feedback vs blind
+  - Feedback: lose interest only if the recipient knows the rumor.   - Blind: lose interest regardless of the recipient.
+
+Rumor mongering can be mixed with anti-entropy: for example, new updates can be spread quickly with rumor mongering; however, since there is no guarantee that everyone will receive the update, an anti-entropy protocol can be run in the background in order to let eventually know everyone of the update.
+
+Finally, we can use death certificates in order to deal with deletions (i.e. deleted updates). DCs can be either retained until we are sure the whole system has gotten them, or discard them after a prolonged amount of time.
+
+## 20211004, 20211011
+
+Notes for these two lessons can be found in the `consensus.pdf` file.
