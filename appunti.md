@@ -114,3 +114,28 @@ Finally, we can use death certificates in order to deal with deletions (i.e. del
 ## 20211004, 20211011
 
 Notes for these two lessons can be found in the `consensus.pdf` file.
+
+## 20211018
+
+### P2P
+
+Brief introduction on overlay networks and their role in big distributed systems, especially in P2P - which are inherently mutable and decentralized. While alternative topologies exist (e.g. hierarchical, semi-decentralized, structured such as DHT, and other random ones). P2P has its strength in using the power of edge nodes to send and receive that in order to benefit both the sender and the receiver.
+
+In this section, we analyze DHT (Distributed Hash Tables). We saw them in DS1, so I do not write any superfluous notes for them.
+
+Indeed, the first thing unseen with DHTs regards routing. Suppose we have a DS, in which every machine has the task of maintaining a set amount of keys. Any machine that needs to reach such server (e.g. that needs to do a put on key "x"), can first contact a server which is nearer to the location, which will recursively contact another one, and so on.
+
+Talking more explictly, our system is structured as follows:
+
+- keys and nodes are represented with nodes strictly pertaining to an ID space (usually keys are hashes, node identifiers are random hashes). A large enough space allows for sufficiently low probabilities of collisions
+- each node in the DHT stores k,v pairs. Authority on the nodes is ensured by storing them such that their identifier of node n is the closest to each of its keys k, and the largest node id smaller than k.
+- build an overlay network, in which each node has both immediate and long range neighbors
+- allow for both recursive and iterative routing in order to maintain robustness and latency low
+
+It is also important to recover from failures (as eventually there will be no neighbors) and allow new nodes to join the system properly. Recovery can be either reactive (when other neighbors notice a crash) and proactive (by regular sending of a neighbor list).
+
+Some algorithms seen in class include:
+
+- Chord: already seen in DS1...just remember about space, O(log n) routing, and the join procedure - in which each node sends a \<stabilize\> message to successors and \<notify\> to precedecssors
+- CAN - associates to each node and item an d-dimensional ID in a d-dimensional torus. The routing table size is constant with regards to the dimension d. Brief explaination about the subdivision of spaces (i.e. when a node joins, it is moved into an empty space and the space itself sliced in a rectangular area 2:1)
+- Kademlia - tree-based routing in which every node maintaing information about keys close to itself and parallel async queries are used. Nodes are treated as leafs, so for each leaf, there will be a number of discrete subtrees which will either have no common prefix or part of a common prefix. This information is used in routing in order to incrementally advance the distance to the searched key.
