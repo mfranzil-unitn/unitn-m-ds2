@@ -21,3 +21,5 @@ You can find the following material in the repo:
 ## Authors
 
 * **Matteo Franzil** - *Initial work* - [mfranzil](https://github.com/mfranzil)
+* **Alberto Montresor** - *original author of Consensus paper*
+* **kevinjqiu** - owner of [Failure Detector repository](https://github.com/kevinjqiu/failure_detector)
