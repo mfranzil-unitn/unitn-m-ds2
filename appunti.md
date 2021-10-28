@@ -139,3 +139,23 @@ Some algorithms seen in class include:
 - Chord: already seen in DS1...just remember about space, O(log n) routing, and the join procedure - in which each node sends a \<stabilize\> message to successors and \<notify\> to precedecssors
 - CAN - associates to each node and item an d-dimensional ID in a d-dimensional torus. The routing table size is constant with regards to the dimension d. Brief explaination about the subdivision of spaces (i.e. when a node joins, it is moved into an empty space and the space itself sliced in a rectangular area 2:1)
 - Kademlia - tree-based routing in which every node maintaing information about keys close to itself and parallel async queries are used. Nodes are treated as leafs, so for each leaf, there will be a number of discrete subtrees which will either have no common prefix or part of a common prefix. This information is used in routing in order to incrementally advance the distance to the searched key.
+
+## 20211024
+
+### Security aspects of DHTs
+
+When considering DHTs, we must take care of security aspects that may impact the system, such as:
+
+- Sybil attacks: when an attacker introduces bogus nodes that do not adhere to protocols. To defend, we can use centralized certifications, computational puzzles, and registration, although they are impossible to completely destroy
+- Eclipse attacks: when an attacker tries to corrupt routing tables of honest nodes by redirecting them to malicius nodes. Is defendable by constraining the neighbor selection.
+- Routing and storage attacks: various attacks taht may be mitigated with redundancy.
+
+### Unstructured systems
+
+Finally, we visualize two systems that come with great drawbacks due to their design.
+
+- Gnutella: a protocol for peer-to-peer research. Each node selects its own neighbors and sends up to five types of messages. They include PING, PONG, QUERY, QUERYHIT, and PUSH. The first two make up half of Gnutella traffic, overcrowding the network with useless messages. Moreover, we have no control on how the network is actually generated. Gnutella was a failure, and although a pioneer on decentralization, suffered from being continuously patched and not being reliable and efficient.
+- BitTorrent: a P2P file sharing protocol. It is designed for efficient content download. Its structure is based on a torrent file, a dictionary that contains a tracker, a name, the number of pieces, the hash, and the number of bytes per pieces. BitTorrent performs both peer selection (where to upload pieces) and piece selections (what to download). Usually, either priority is given to missing sub-pieces or to the rarest pieces on the network. Other policies including random first piece or endgame mode. Regarding peer selection, choking is a temporary refusal to upload, used against peers that leech data without contributing, in order to assure that as many peers as possible open dual connections for both upload and download. 
+
+Please see the slides for more information about BitTorrent specifics.
+
