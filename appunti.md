@@ -159,3 +159,12 @@ Finally, we visualize two systems that come with great drawbacks due to their de
 
 Please see the slides for more information about BitTorrent specifics.
 
+## 20211029
+
+### Complex Systems, Peer Sampling (epidemics)
+
+The lecture started with an overview on some definitions about graphs, including average path length, induced graphs, and clustering coefficients.
+
+Due to the vast amount of small definitions, it is recommended to see the slides instead. No notes were taken.
+
+- clustering coefficient = probability
