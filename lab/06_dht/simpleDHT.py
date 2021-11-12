@@ -1,18 +1,21 @@
 import hashlib
-from tabulate import tabulate
-import code  # code.interact(local=dict(globals(), **locals()))
-import random
 
-BITLENGHT = 8
+BITLENGTH = 8
 
 
-def compute_key(string, bitlength=BITLENGHT):
+def compute_key(string: str, bitlength=BITLENGTH):
+    """
+    Compute a key from a string.
+    """
     digest = hashlib.sha256(bytes(string, 'utf-8')).digest()
-    subdigest = digest[:bitlength//8]
+    subdigest = digest[:bitlength // 8]
     return int.from_bytes(subdigest, 'little')
 
 
-def clock_dist(a, b, maxnum=2**BITLENGHT - 1):
+def clock_dist(a: int, b: int, maxnum=2 ** BITLENGTH - 1):
+    """
+    Compute the distance between two keys.
+    """
     if a == b:
         return 0
     elif a < b:
@@ -21,138 +24,155 @@ def clock_dist(a, b, maxnum=2**BITLENGHT - 1):
         return maxnum - (a - b)
 
 
-class NodeDHT():
-    def __init__(self, name):
-        self.name = name
-        self.id = compute_key(name)
-        self.succ = None
+class NodeDHT:
+    """
+    Node in a DHT. With name, ID (address), pointers to successor and pred, storage (an HT)
+    """
+
+    def __init__(self, _id: str):
+        self.name = _id
+        self.id = compute_key(_id)
         self.pred = None
-        self.ht = dict()
+        self.succ = None
+        self.storage = {}
 
-    def setSuccessor(self, node):
-        self.succ = node
+    def set_successor(self, succ: 'NodeDHT'):
+        self.succ = succ
 
-    def setPredecessor(self, node):
-        self.pred = node
+    def set_predecessor(self, pred: 'NodeDHT'):
+        self.pred = pred
 
-    def join(self, requester):
-        requesterID = requester.id
-        dist = clock_dist(self.id, requesterID)
-        distFromMySuccessor = clock_dist(self.succ.id, requesterID)
-
-        if dist > distFromMySuccessor:
-            self.succ.join(requester)
+    def join(self, joiner: 'NodeDHT'):
+        """
+        Join two nodes. A -> X -> B or B -> X -> A
+        """
+        if clock_dist(self.id, joiner.id) > clock_dist(self.succ.id, joiner.id):
+            self.succ.join(joiner)
         else:
-            requester.setPredecessor(self)
-            requester.setSuccessor(self.succ)
+            joiner.set_predecessor(self)
+            joiner.set_successor(self.succ)
+            self.succ.set_predecessor(joiner)
+            self.set_successor(joiner)
 
-            self.succ.setPredecessor(requester)
-            self.setSuccessor(requester)
+    def store(self, value):
+        key = compute_key(value)
+        if key == self.id or (self.id - key) % (2 ** BITLENGTH) < (self.id - self.pred.id) % (2 ** BITLENGTH):
+            # if clock_dist(self.id, key) > clock_dist(self.succ.id, key):
+            self.storage[key] = value
+            return value
+        else:
+            return self.succ.store(value)
 
-    def store(self, key, value):
-        dist = clock_dist(self.id, key)
-        distFromMySuccessor = clock_dist(self.succ.id, key)
+    def lookup(self, key: int):
 
-        if dist > distFromMySuccessor:
+        """
+        Lookup the value of a key.
+        :param key:
+        :return:
+        """
+        if clock_dist(self.id, key) > clock_dist(self.succ.id, key):
             # Forward going closer to responsible node
-            self.succ.store(key, value)
+            return f"{key}:{self}# -> " + self.succ.lookup(key)
         else:
-            self.ht[key] = value
+            if key in self.storage.keys():
+                return f"{key}:{self}H -> " + self.storage[key]
+            else:
+                return f"{key}:{self}ø "
 
-    def lookup(self, key):
-        print("node: {} looking for key: {}".format(self.id, key))
-        dist = clock_dist(self.id, key)
-        distFromMySuccessor = clock_dist(self.succ.id, key)
-
-        if dist > distFromMySuccessor:
-            # Forward going closer to responsible node
-            self.succ.lookup(key)
+    def lkwrp(self, key: int, original_caller: 'NodeDHT'):
+        if clock_dist(self.id, key) > clock_dist(self.succ.id, key):
+            return f"-> {self}# " + self.succ.lkwrp(key, original_caller)
+        elif key in self.storage.keys():
+            return f"-> {self}@ " + self.storage[key]
         else:
-            try:
-                value = self.ht[key]
-                print("key: {} found! Value = {}".format(key, value))
-                return value
-            except KeyError:
-                print("{} not available in DHT".format(key))
-                return None
+            return f"-> {self} ø"
+
+    def print_storage(self):
+        print(f"{self}")
+        print("---------------")
+        for key, value in sorted(self.storage.items()):
+            print(f"{key} -> {value}")
+        print("---------------")
+        print("\n")
+
+    def __str__(self):
+        return f"{str(self.name)}@{str(self.id)}"
+
+    def __lt__(self, other):
+        return self.id < other.id
 
 
-def printRing(startnode):
-    nodelist = [startnode.id]
-    nextNode = startnode.succ
-    while (nextNode != startnode):
-        nodelist.append(nextNode.id)
-        nextNode = nextNode.succ
-    nodelist = sorted(nodelist)
-    print(" -> ".join([str(x) for x in nodelist]))
-
-
-def printDHT(startnode):
-    node2content = {startnode.id: startnode.ht}
-    nextNode = startnode.succ
-    while (nextNode != startnode):
-        node2content[nextNode.id] = nextNode.ht
-        nextNode = nextNode.succ
-    tabulable = {k: sorted(list(v.items()))
-                 for k, v in sorted(node2content.items())}
-    print(tabulate(tabulable, headers='keys'))
+def print_ring(start_node: 'NodeDHT'):
+    """
+    Print the ring.
+    """
+    start = start_node.succ
+    while start != start_node:
+        print(f"{start} ->", end=" ")
+        start = start.succ
+    print(start)
 
 
 def main():
-    # start a network with 4 random nodes
+    """
+    Main function.
+    """
+    # print(compute_key('hello'))
+    # print(compute_key('world'))
+    # print(clock_dist(compute_key('hello'), compute_key('world')))
+    # for i in range(100):
+    #     print(clock_dist(1, 4, 12))
+    #     print(clock_dist(11, 1, 12))
 
-    # start first 2 nodes setting manually succ and pred.
+    n1 = NodeDHT('n1')
+    n2 = NodeDHT('n2')
 
-    print("Creating first two nodes")
-    n1 = NodeDHT("node1")
-    n2 = NodeDHT("node2")
+    n1.set_successor(n2)
+    n1.set_predecessor(n2)
 
-    n1.setSuccessor(n2)
-    n1.setPredecessor(n2)
-    n2.setSuccessor(n1)
-    n2.setPredecessor(n1)
+    n2.set_successor(n1)
+    n2.set_predecessor(n1)
 
-    print("Creating further two nodes")
-    # add 2 more nodes by join procedure
-    n3 = NodeDHT("node3")
-    n4 = NodeDHT("node4")
+    print("Creating more nodes that join existing ones!")
+    n3 = NodeDHT('n3')
+    n4 = NodeDHT('n4')
 
-    print("n3 joining from n2")
     n2.join(n3)
-
-    print("n4 joining from n1")
     n1.join(n4)
 
+    print_ring(n1)
+
+    divina = "cammin Nel mezzo del cammin di nostra vita " \
+             "mi ritrovai per una selva oscura, " \
+             "che la diritta via era smarrita. " \
+             "Ahi quanto a dir qual era è cosa dura " \
+             "esta selva selvaggia e aspra e forte " \
+             "che nel pensier rinova la paura!   "
+
+    divina_keywords = list(dict.fromkeys(
+        divina.lower()
+            .replace(",", " ")
+            .replace(";", " ")
+            .replace(".", " ")
+            .replace("!", " ")
+            .split())
+    )
+
+    # print(divina_keywords)
+
+    for keyword in divina_keywords:
+        n1.store(keyword)
+
     nodes = [n1, n2, n3, n4]
+    for node in sorted(nodes):
+        node.print_storage()
 
-    # Inject some contents
-    niceQuote = "nel mezzo del cammin di nostra vita mi ritrovai per una selva oscura che la diritta via era smarrita"
-    contents = niceQuote.split(" ")
-    for word in contents:
-        key = compute_key(word)
-        node = random.choice(nodes)
+    for keyword in divina_keywords:
+        key = compute_key(keyword)
+        print(n1.lookup(key))
 
-        node.store(key, word)
-
-    printDHT(n1)
-    code.interact(local=dict(globals(), **locals()))
-
-    # Test lookups queries
-
-    # Correct queries
-    for _ in range(4):
-        c = random.choice(contents)
-        node = random.choice(nodes)
-
-        print("Searching for \'{}\'".format(c))
-        node.lookup(compute_key(c))
-        print("\n")
-
-    # Wrong query
-    c = "NOT INSERTED UNLESS HASH CONFLICT XD"
-    print("Searching for \'{}\'".format(c))
-    n1.lookup(compute_key(c))
+    print(n1.lookup(compute_key('uffa')))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

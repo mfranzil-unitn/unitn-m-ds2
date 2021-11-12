@@ -1,6 +1,7 @@
 APScheduler==3.8.0
 arrow==1.2.0
 binaryornot==0.4.4
+bitstring==3.1.9
 blockdiag==2.0.1
 brotlipy==0.7.0
 certifi==2021.10.8

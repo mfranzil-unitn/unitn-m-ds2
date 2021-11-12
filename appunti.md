@@ -168,3 +168,8 @@ The lecture started with an overview on some definitions about graphs, including
 Due to the vast amount of small definitions, it is recommended to see the slides instead. No notes were taken.
 
 - clustering coefficient = probability
+
+## 20211108
+
+From this point, no further notes were taken.
+
