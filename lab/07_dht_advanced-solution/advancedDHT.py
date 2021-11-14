@@ -1,8 +1,6 @@
 from hashlib import sha256
 from bitstring import BitArray
 from tabulate import tabulate
-import code  # code.interact(local=dict(globals(), **locals()))
-import random
 import networkx as nx
 import matplotlib.pyplot as plt
 
