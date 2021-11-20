@@ -1,6 +1,8 @@
 from hashlib import sha256
 from bitstring import BitArray
 from tabulate import tabulate
+import code  # code.interact(local=dict(globals(), **locals()))
+import random
 import networkx as nx
 import matplotlib.pyplot as plt
 
@@ -40,11 +42,19 @@ def findNode(startnode, key):
      but smaller ID in the DHT compared to key"""
     current = startnode
     recLevel = 0
-    while dist(current.id, key) > \
-            dist(current.succ.id, key):
+    while dist(current.id, key) > dist(current.succ.id, key):
         current = current.succ
         recLevel += 1
     #print("current {}, succ {}, key {}".format(current.id, current.succ.id, key))
+    return current, recLevel
+
+
+def findNodeWithFinger(startnode, key):
+    current = startnode
+    recLevel = 0
+    while dist(current.id, key) > dist(current.myBestFinger(key).id, key):
+        current = current.myBestFinger(key)
+        recLevel += 1
     return current, recLevel
 
 
@@ -104,33 +114,24 @@ class NodeDHT():
     def update(self):
         myID = self.id
         for x in range(BITLENGTH):
-            startFrom = self.finger[x] if x in self.finger else self
-            #code.interact(local=dict(globals(), **locals()))
-            fingerX, _ = findNode(startFrom, (myID + (2**x)) % (2**BITLENGTH))
+            fingerX, _ = findNode(self, (myID + (2**x)) % (2**BITLENGTH))
             self.finger[x] = fingerX
 
-    def findFinger(self, key):
-        current = self
-        for x in range(BITLENGTH):
-            if dist(current.id, key) > \
-                    dist(self.finger[x].id, key):
-                current = self.finger[x]
-        return current
+    def myBestFinger(self, key):
+        best, mindist = None, 2**BITLENGTH
+        for x in sorted(range(BITLENGTH)):
+            cdist = dist(self.finger[x].id, key)
+            if cdist < mindist:
+                #print("finger[{}] = {} improved min-dist that now is {}".format(x, self.finger[x].id, cdist))
+                best = self.finger[x]
+                mindist = cdist
+        return best
 
     def fingerLookup(self, key):
         #print("Asking key: {} to node: {}".format(key, self.id))
-        current = self.findFinger(key)
-        nextNode = current.findFinger(key)
-        recLevel = 0
-        while dist(current.id, key) > \
-                dist(nextNode.id, key):
-            #print("Finger: {}, succ.Finger: {}".format(current.id, nextNode.id))
-            current = nextNode
-            nextNode = current.findFinger(key)
-            recLevel += 1
-
+        responsible, recLevel = findNodeWithFinger(self, key)
         try:
-            value = current.ht[key]
+            value = responsible.ht[key]
             print("key: {} found! Value = {}".format(key, value))
             return value, recLevel
         except KeyError:
@@ -205,5 +206,3 @@ def drawCircularWithFinger(fingernode):
     plt.title("circular DHT with finger links of node {}".format(fingernode.name))
     plt.savefig("dhtGraphWithFingers.pdf", format='pdf')
     plt.clf()
-
-
