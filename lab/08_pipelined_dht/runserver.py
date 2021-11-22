@@ -1,13 +1,11 @@
 #!/usr/bin/env python
-import threading
 from argparse import ArgumentParser
 
 import server
 
-
-def generate_url(string):
-    host, port, name = string.split(':')
-    return f'http://{host}:{port}/', name
+# def generate_url(string):
+#     host, port, name = string.split(':')
+#     return f'http://{host}:{port}/', name
 
 
 if __name__ == '__main__':
@@ -19,12 +17,4 @@ if __name__ == '__main__':
     parser.add_argument('-P', '--pred', action='store', help='successor')
 
     args = parser.parse_args()
-
-   # n0t = threading.Thread(target=
-   #                        server.start_node(host=args.host, port=args.port, name=args.name + "0"))
-    #node_0 = f'{str(args.host)}:{str(args.port)}:{str(args.name)}0'
-    server.start_node(host=args.host, port=args.port + 1, name=args.name + "1")
-    node_1 = f'{str(args.host)}:{str(args.port + 1)}:{str(args.name)}1'
-
-    #•requests.put(generate_url(node_0)[0] + 'succ', data={'succ': node_1})
-    #çrequests.put(generate_url(node_1)[0] + 'pred', data={'pred': node_0})
+    server.start_node(host=args.host, port=args.port, name=args.name)
