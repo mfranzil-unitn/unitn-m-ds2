@@ -13,7 +13,7 @@ colorama==0.4.4
 cookiecutter==1.7.3
 cryptography==3.4.7
 cycler==0.10.0
-dataclasses==0.8
+dataclasses
 decorator==4.4.2
 Flask==2.0.2
 funcparserlib==0.3.5
