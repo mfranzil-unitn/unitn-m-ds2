@@ -11,8 +11,8 @@ IP = 'localhost'
 @task(default=True)
 def boot(ctx):
     print("Booting a network with two hard-wired nodes...")
-    p1 = Process(IP, '10001', 'PROC10001')
-    p2 = Process(IP, '10002', 'PROC10002')
+    p1 = Process(IP, 10001, 'PROC10001')
+    p2 = Process(IP, 10002, 'PROC10002')
 
     startProcess(p1.port, p1.name, p2.hostportname(), p2.hostportname())
     startProcess(p2.port, p2.name, p1.hostportname(), p1.hostportname())
