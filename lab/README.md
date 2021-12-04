@@ -1,4 +1,9 @@
-# PipelineDHT
+# Licence and disclaimer for DHT labs
+
+Labs 8 to 10 are based on (pipelinedht)[https://github.com/pipelinedb/pipelinedht], whose README can be found at the root of the repo and here. 
+The relevant licence is [MIT](LICENSE).
+
+## PipelineDHT
 A simple distributed hash table
 
 ### Overview
