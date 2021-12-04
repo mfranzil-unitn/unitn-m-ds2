@@ -134,5 +134,5 @@ def leave():
   raise NotImplemented
 
 def start_app(host, port, name, pred=None, succ=None):
-  app.proc = Process(host, port, name, pred, succ)
+  app.proc : Process or None = Process(host, port, name, pred, succ)
   app.run(host=host, port=port)
