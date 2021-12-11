@@ -82,7 +82,7 @@ class NodeDHT:
         del target.storage[key]
         return retval
 
-    def lookup(self, key: 'int') -> 'str' or None:
+    def lookup(self, key: 'int') -> ('str', int) or (None, int):
         target, rec = find_node(self, key)
         try:
             value = target.storage[key]
