@@ -9,6 +9,13 @@ MQTTBROKER = 'localhost'
 LEADING_ZEROS = 2
 
 
+def block_summary(block):
+    """
+    Return a summary of a block
+    """
+    return f"{block['blockhash']} {block['timestamp']} {block['proof']}"
+
+
 def mine(miner: 'Miner'):
     """
     Mine a new block
@@ -77,7 +84,7 @@ class Miner:
         announcement = json.loads(decoded)
         if announcement['publisher'] != self.id:
             block = announcement['block']
-            # keep going...
+            print(f"{self.name} received new block {block}")
 
 
     def on_newtrx(self, client, userdata, msg):
@@ -97,7 +104,8 @@ class Miner:
         print(f"{self.name} published new transaction {trx}")
 
     def publish_block(self, block):
-        pass
+        self.block_producer.publish(f'NEWBLOCK', json.dumps(block, sort_keys=True))
+        print(f"{self.name} published new block {block}")
 
     def start(self):
         # Start listening to new transactions and blocks
@@ -111,7 +119,9 @@ class Miner:
 
     def stop(self):
         # Dump the blockchain
-        pass
+        self.block_consumer.loop_stop()
+        self.trx_consumer.loop_stop()
+
 
     def working_block(self):
         now = dt.now().isoformat()
@@ -127,3 +137,5 @@ class Miner:
             'nonce': nonce(now),
             'previous_hash': self.blockchain[-1]['blockhash']
         }
+
+        return block
