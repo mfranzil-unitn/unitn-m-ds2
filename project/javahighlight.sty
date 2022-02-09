@@ -1,0 +1,37 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{javahighlight}[2022/02/03 java code highlighting; adapted by Matteo Franzil, Paolo Chistè and Andrea Stedile from pythonhighlight, originally by Olivier Verdier (2011/09/19) <olivier.verdier@gmail.com>.]
+
+\RequirePackage{listings}
+\RequirePackage{xcolor}
+
+\definecolor{gray}{gray}{0.5}
+
+\colorlet{stringcolour}{red!60!black}
+\colorlet{keywordcolour}{magenta!90!black}
+\colorlet{exceptioncolour}{yellow!50!red}
+\colorlet{commandcolour}{blue!60!black}
+\colorlet{numpycolour}{blue!60!green}
+\colorlet{literatecolour}{magenta!90!black}
+\colorlet{promptcolour}{green!50!black}
+\colorlet{specmethodcolour}{violet}
+\colorlet{commentcolour}{green!50!black}
+
+\lstdefinestyle{myjava}{
+    language=java,
+    tabsize=2,
+    basicstyle=\ttfamily\footnotesize,
+    stringstyle=\color{stringcolour},
+    showstringspaces=false,
+    alsoletter={1234567890},
+    %otherkeywords={\}, \{, \&, \|},
+    keywordstyle=\color{keywordcolour}\bfseries,
+    emph={abstract,continue,for,new,switch,assert,default,goto,package,synchronized,boolean,do,if,private,this,break,double,implements,protected,throw,byte,else,import,public,throws,case,enum,instanceof,return,transient,catch,extends,int,short,try,char,final,interface,static,void,class,finally,long,strictfp,volatile,const,float,native,super,while},
+    emphstyle=\color{blue}\bfseries,
+    emph={[2]true, false, null},
+    emphstyle=[2]\color{keywordcolour},
+    commentstyle=\color{commentcolour}\slshape,
+    backgroundcolor=\color{white}
+}
+
+\newcommand*{\inputjava}[3]{\lstinputlisting[firstline=#2,lastline=#3,firstnumber=#2,frame=single,breakindent=.5\textwidth,frame=single,breaklines=true,style=myjava]{#1}}
+

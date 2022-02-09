@@ -1,0 +1,27 @@
+public class LocalLogView extends AbstractTableView<LocalLogModel> {
+    public LocalLogView(ApplicationContext applicationContext) {
+        super(applicationContext);
+
+        TableColumn<LocalLogModel, ObservableList<LogEntry>> localLog = new TableColumn<>("Local log");
+        localLog.setCellValueFactory(param -> param.getValue().logEntriesProperty());
+        localLog.setCellFactory(param -> new LocalLogTableCell());
+        getColumns().add(localLog);
+
+        TableColumn<LocalLogModel, Number> commitIndex = new TableColumn<>("Commit index");
+        commitIndex.setCellValueFactory(param -> param.getValue().commitIndexProperty());
+        getColumns().add(commitIndex);
+
+        TableColumn<LocalLogModel, Number> lastApplied = new TableColumn<>("Last applied");
+        lastApplied.setCellValueFactory(param -> param.getValue().lastAppliedProperty());
+        getColumns().add(lastApplied);
+
+        applicationContext.eventBus.listenFor(Spawn.class, this::onSpawn);
+        applicationContext.eventBus.listenFor(LogAppend.class, this::onLogAppendEvent);
+        applicationContext.eventBus.listenFor(LogRemove.class, this::onLogRemoveEvent);
+        applicationContext.eventBus.listenFor(CommitIndexIncrement.class, this::onCommitIndexIncrement);
+        applicationContext.eventBus.listenFor(CommitIndexDecrement.class, this::onCommitIndexDecrement);
+        applicationContext.eventBus.listenFor(CommitIndexSet.class, this::onCommitIndexSet);
+        applicationContext.eventBus.listenFor(LastAppliedIncrement.class, this::onLastAppliedIncrement);
+        applicationContext.eventBus.listenFor(LastAppliedSet.class, this::onLastAppliedSet);
+    }
+(...)

@@ -1,0 +1,7 @@
+public final class AppendEntries extends AbstractRaftMsg implements RaftRequest {
+    public final ActorRef<Raft> leaderId;
+    public final int prevLogIndex;
+    public final int prevLogTerm;
+    public final List<LogEntry> entries;
+    public final int leaderCommit;
+}

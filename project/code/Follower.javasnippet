@@ -1,0 +1,10 @@
+public final class Follower extends Server {
+
+    public static Behavior<Raft> waitForAppendEntries(ActorContext<Raft> ctx, Servers servers, FollowerState state);
+    
+    private static void startElectionTimer(ActorContext<Raft> ctx, TimerScheduler<Raft> timers);
+    
+    private static Behavior<Raft> onElectionTimeout(ActorContext<Raft> ctx, Servers servers, FollowerState state);
+    
+    // (...implementation of onAppendEntries, crash and stop from superclass
+}

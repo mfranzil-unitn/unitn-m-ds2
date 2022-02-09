@@ -1,0 +1,10 @@
+public abstract class State {
+    // Persistent state on all servers:
+    public final CurrentTerm currentTerm;
+    public final VotedFor votedFor;
+    public final Log log;
+
+    // Volatile state on all servers:
+    public final CommitIndex commitIndex;
+    public final LastApplied lastApplied;
+}

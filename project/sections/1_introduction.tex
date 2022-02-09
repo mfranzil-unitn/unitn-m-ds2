@@ -1,0 +1,12 @@
+\section{Introduction}
+%{\huge Da riscrivere probabilmente}
+The \textbf{distributed consensus problem} is an unsolvable problem in Computer Science. Even with the most benign of assumptions, it is possible to prove that any algorithm that tries to solve the problem can enter in an inconsistent state by simply delaying the delivery of a message. \cite{fischer_impossibility_nodate}.
+
+However, this theoretically impossible problem is solvable ``in practice'', by relaxation of one or more of its requirements. Paxos \cite{lamport_part-time_1998} is one of the first of these algorithms. Many modern implementations are based on Paxos, but with major modifications to its initial description. This is in part motivated by the intrinsic complexity of the Paxos protocol. in part to the unorthodox paper where the protocol is presented \footnote{It outlines the algorithm as a series of archeological discoveries in the Paxos Greek island, which narrated how the island's dysfunctional parliament managed to work.}.
+
+\textbf{Raft} \cite{ongaro_search_nodate} is a protocol that aims at solving the same problem (distributed consensus), but with a specification that is easier to understand. It is similar to Paxos: both are based on the idea of a log that is replicated among the participants and on the use of a leader as a source of truth for the other participants. Distributed log replication protocols are usually used to replicate operations on multiple servers; each entry in the log is the command for a state machine. When it is safe to do so, the state machine executes an entry in the log. Non all machines execute the same command at the same time, but \textit{eventually} all state machines reach the same state.
+
+The report is organized as follows. \cref{background} provides a brief insight on the Raft properties and how the protocol manages to successfully implement distributed consensus. \cref{architecture} shows our implementation, outlining our key design decisions in the architecture and how they were integrated into the project. \cref{demo} provides information on how to downloading and starting the simulation, and is corredated with a handful of example screenshots. Finally, \cref{conclusion} contains the conclusions to the report.
+
+\clearpage
+\newpage

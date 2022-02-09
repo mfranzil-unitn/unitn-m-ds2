@@ -1,0 +1,12 @@
+return Behaviors.withTimers(timers -> {
+    startElectionTimer(ctx, timers);
+    
+    return Behaviors.receive(Raft.class)
+            .onMessage(AppendEntriesRPC.class, msg -> onAppendEntries(ctx, timers, servers, state, msg))
+            .onMessage(ElectionTimeout.class, msg -> onElectionTimeout(ctx, servers, state))
+            .onMessage(RequestVoteRPC.class, msg -> onVote(ctx, state, msg))
+            .onMessage(Crash.class, msg -> crash(ctx, timers, servers, state, msg))
+            .onMessage(Stop.class, msg -> stop(ctx, timers, servers, state))
+            .onAnyMessage(msg -> Behaviors.ignore())
+            .build();
+};

@@ -1,0 +1,19 @@
+ctx.ask(AppendEntriesResult.class,
+    recipient,
+    isRetry ? Duration.ofMillis(100) : Duration.ofMillis(properties.rpcTimeoutMs),
+    (ActorRef<AppendEntriesResult> replyTo) -> \ 
+        new AppendEntriesRPC(ctx.getSelf(),
+                             seqNum.computeNext(recipient),
+                             replyTo,
+                             appendEntries),
+    (response, throwable) -> { 
+        if (response != null) {
+            return new AppendEntriesRPCResponse(
+                recipient,
+                seqNum.expectedSeqNum(recipient),
+                appendEntries,
+                response);
+        }
+        return new RPCTimeout(recipient);
+    }
+);

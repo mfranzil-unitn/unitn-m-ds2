@@ -1,0 +1,27 @@
+public final class Leader extends Server {
+    public static Behavior<Raft> \
+        elected(ActorContext<Raft> ctx, Servers servers,
+        SeqNum seqNum, LeaderState state);
+
+    private static Behavior<Raft> \
+        onCommand(ActorContext<Raft> ctx, StashBuffer<Raft> stash,
+        Servers servers, SeqNum seqNum, LeaderState state, Command msg);
+
+    private static void \
+        appendEntriesRPC(ActorContext<Raft> ctx, SeqNum seqNum,
+        LeaderState state, ActorRef<Raft> recipient
+        boolean isHeartbeat, boolean isRetry);
+
+    private static Behavior<Raft> \
+        onRPCTimeout(ActorContext<Raft> ctx, SeqNum seqNum,
+        LeaderState state, RPCTimeout msg);
+
+    private static Behavior<Raft> \
+        onAppendEntriesResult(ActorContext<Raft> ctx, StashBuffer<Raft> stash,
+        Servers servers, SeqNum seqNum, LeaderState state,
+        AppendEntriesRPCResponse msg);
+
+    private static AppendEntries \
+        createAppendEntries(ActorContext<Raft> ctx, LeaderState state,
+        ActorRef<Raft> server, boolean isHeartbeat);
+}

@@ -1,0 +1,119 @@
+\section{Theory Background}
+\label{background}
+
+The Raft protocol divides the initial problem into two separate problems: leader election and log replication. The leader election is solved with a voting procedure. The log replication is based on maintaining a set of constraints on the contents on each server's log, guaranteeing the consistency of the replicated log entries. The protocol is based on two RPCs: RequestVoteRPC (for leader election) and AppendEntriesRPC (for log replication). The two phases follow each others inside a \emph{term}.
+
+The servers that participate in the protocol may take three roles: \emph{leader, follower, or candidate}. 
+\begin{itemize}
+    \item The leader is responsible for linearizing the insertion of log entries on the other machines. It receives the entries to append from the clients, and then proceeds to replicate them.
+    \item The followers respond to RPCs from the leader.
+    \item The candidate role is required only when preparing to elect a new leader (see \ref{leader-election}).
+\end{itemize}
+Each server may take only one role at the time.
+\subsection{Leader Election}
+\label{leader-election}
+\begin{algorithm}[ht]
+\caption{Arguments of the RequestVoteRPC}
+\label{algo-requestVote-arguments}
+bool RequestVoteRPC( \\
+    term, \\
+    candidateId, \\ 
+    lastLogIndex, \emph{// index of the last log entry (i.e: the most recent one)}\\
+    lastLogTerm   \emph{// term of the last log entry}\\
+    ) \;
+\end{algorithm}
+The outline of the leader election protocol is simple. Any server can start the leader election procedure after a certain time has passed without receiving any messages (indicating that the previous leader is dead or not connected anymore). This ``candidate'' server sends a RequestVoteRPC to all other servers (which may be in any other state), and they decide to grant or not the vote to the candidate. If a majority of servers granted their votes, the candidate becomes the new leader. Otherwise, it starts a new election. The timeouts on each server are usually initialized with some random offset, to avoid simultaneous elections. Simultaneous elections do not result in more than one leader being elected, but they may split the majority and the election would not produce a leader. A server may only vote once in a single term, thus it is granted that only one leader will be elected in a single term.
+
+\subsection{Log Replication}
+\begin{algorithm}[ht]
+\caption{Arguments of the AppendEntriesRPC}
+\label{algo-appendEntries-arguments}
+bool AppendEntriesRPC( \\
+    term, \\
+    leaderId, \\
+    prevLogIndex, \emph{// index of the last log entry} \\
+    prevLogTerm,  \emph{// term of the last log entry} \\
+    entries[],    \emph{// entries to append} \\
+    leaderCommit  \emph{// leader's commitIndex} \\
+    )\;
+\end{algorithm}
+After electing a leader for the cluster, the log replication phase can begin. When the leader has new entries appended to its own log, it sends an AppendEntriesRPC to all followers. The entry is appended if it satisfies a series of checks (see \ref{when-to-append}), otherwise the RPC fails. If the RPC succeeds on the majority of the followers, the entry is considered committed. The log replication phase ends if one of the followers decides to start a new election; the protocol returns in the leader election phase, until a new leader is elected.
+\subsubsection{When to append log entries}
+\label{when-to-append}
+During normal operation (no messages are lost or delayed) the followers can append entries to their local log just as they receive them. However, if messages are lost or delayed, the followers need to be careful in what they add. For example, if a follower receives entries with index $\{1,2,3,4\}$, but the entry with index 3 is lost, the entries in the local log of the follower will be $\{1,2,4\}$, and the logs would diverge. Instead, a follower appends an entry if it satisfies the following requirements (see algorithm \ref{algo-add-entries-local-log}):
+\begin{enumerate}
+    \item It has a term number $\geq$ than the current term number
+    \item The indicated previous entry has the same term number as the previous entry on the leader 
+\end{enumerate}
+These requirements ensure that a given follower appends entries coming from the current leader and are applied in the same order as all other followers. If the follower cannot append the entries, the RPC fails. The leader does not "give up" on a failed RPC but instead sends previous entries from its own local log (see algorithm \ref{algo-leader-update-status}). By following this scheme, the leader will eventually find an entry that can be appended on the follower, and then will send the entries following that entry.
+
+A follower needs a mechanism to correct its own log when appending new entries. When adding a set of new entries, if there is a new entry with the same index and the same term as an entry already present in the log, the new entry replaces the old one. All the entries that follow the replaced one are deleted. This allows for a follower to correct the contents of its log, if is elected a leader that has a different log from the previous one (within certain limits; see \ref{committing-entries}).
+\begin{algorithm}[htp]
+\caption{Procedure used by a follower to verify if it can add a new set of entries to its own localLog}
+\label{algo-add-entries-local-log}
+addEntries(newEntries,term,prevLogIndex,leaderCommit)
+\Begin{
+    previousEntry $\gets$ localLog[prevLogIndex]\;
+    \eIf{term $\geq$ currentTerm $\vee$ previousEntry.term $\neq$ prevLogTerm}
+    {
+        RPC fails; reply false to leader and terminate\;
+    }{
+        %else...
+        \If{entryConflicts(localLog,newEntries)}
+        {
+            deleteFollowers()\;
+        }
+        appendEntriesToLog(newEntries)\;
+        \If{leaderCommit $\geq$ commitIndex} 
+        {
+            \emph{// if the leader already committed entries ahead of us, we can safely commit them}
+            commitIndex $\gets$ min(leaderCommit, newEntries.lastIndex())\;
+        }
+    }
+}
+\end{algorithm}
+
+\begin{algorithm}[ht]
+\caption{Procedure used by a leader to update its internal status based on the result of AppendEntriesRPC from a follower}
+\label{algo-leader-update-status}
+updateInternalStatus(follower\_id)
+\Begin{
+    \eIf{RPC was successful}
+    {
+        nextIndex[follower\_id] $\gets$ nextIndex[follower\_id] + 1\;
+        matchIndex[follower\_id] $\gets$ matchIndex[follower\_id] + 1\;
+    }{
+        %else...
+        nextIndex[follower\_id] $\gets$ nextIndex[follower\_id] - 1\;
+        retry RPC with different nextIndex\;
+    }
+    \emph{/* Either way, success or failure, we try to update the leader's commitIndex.} \\
+    \emph{We look if exists a majority of values of matchIndex, such that matchIndex is greater than the current commit index.
+                In this way, we make sure that we increase the commitIndex only if we have previously received a positive RPC from
+                the majority of followers */} \\
+    \For{N $\gets$ commitIndex; N $<$ localLog.size(); N $\gets$ N + 1}
+    {
+        aheadFollowers $\gets$ 0\;      
+        \emph{// search for followers that have a known matchIndex greater than the current N } \\
+        \For{i $\gets$ 0; i $<$ matchIndex.size(); i $\gets$ i + 1;}
+        {
+            \If{matchIndex[i] >= N $\wedge$ localLog[N].term $==$ currentTerm}
+            {
+                 aheadFollowers $\gets$ aheadFollowers + 1\;
+            }
+        }
+        \If{aheadFollowers $\geq$ (numberOfFollowers $/$ 2)}
+        {
+            commitIndex $\gets$ N\;
+        }
+    }
+}
+\end{algorithm}
+
+\subsubsection{Commits}
+\label{committing-entries}
+The Raft protocol maintains an index to the most recent committed entry. An entry \emph{e} is committed when a majority of servers have \emph{e} in their logs, with the same index and with the same term. This implies that all parts of the log with \texttt{index} $<$ \texttt{commitIndex} are present on all servers, all with the same term, all with the same index. \\
+However, the phrase "a majority of servers have that entry in their logs" is misleading. On a first level, it seems that the leader reads the logs of the followers and then decides which entry is committed. But a more careful read of the protocol brings out an important detail: the leader uses \emph{its own state} to decide which entry to commit, nothing else. The state of the logs is stored inside the \texttt{matchIndex[]} array; each entry contains the index of the higher entry known to be replicated on the server with id \emph{i}. The leader knows that an entry is replicated when receives the response to the AppendEntriesRPC. By virtue of being replicated on a majority of servers, a committed entry is 'safe'; even if the leader changes, it is guaranteed that any committed entry will eventually be present on all followers.
+
+\clearpage
+\newpage

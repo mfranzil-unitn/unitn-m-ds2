@@ -1,0 +1,40 @@
+Richieste di Ghiro.
+
+- Video 1, titolo: "The strengths of our assignment". Prendetevi tutto il tempo che vi serve (ad ogni modo direi non piu' di 8 min), per mostrare diverse esecuzioni di Raft con qualche attore in piu', cosi' da mostrare al prof tutte le funzionalità che avete supportato. Va benissimo che facciate Cherry Picking e mostriate gli scenari migliori in cui tutto vi funziona bene, ignorando di proposito le cose che magari sapete solo voi che ancora non vanno.vMolto bene se durante il video, a turno, ognuno di voi spiega un po' cosa succede dietro le quinte, facendo capire al prof che tutti e 3 sapete bene il protocollo. Magari fate uno scenario a testa e poi montate assieme i 3 mini-demo.
+- Video 2, titolo: "The limitation of our assignment”. Qua state corti, non tiratevi troppo la zappa sui piedi, ma se ci sono alcune limitations giocate d'anticipo e mettete le mani avanti, mostrandole in video e spiegando perche' quella particolare cosa ancora non va e cosa avreste in mente di fare come future work per sistemare anche questa limitation.
+
+------
+
+Scenari.
+
+a) Scenario base. Far partire una simulazione con 5 server. Crashare il leader appena eletto e non riavviarlo. Aspettare la nuova elezione, quindi crashare anche il nuovo. Crashare anche il terzo leader. A questo punto, gli altri due inizieranno ad aumentare costantemente il term nella disperazione. Dopo un poco, far ripartire 2 dei server crashati. Applicare due log al nuovo leader e aspettare che si propaghi a tutti e 4. Crashare il leader, e far tornare quello crashato in precedenza. Aggiungere un terzo log al nuovo leader. Infine, far tornare l'ultimo server crashato e aspettare che si ripropaghino le modifiche. Expected result: [N, N, N+1] (dove N è il log term, che si aggirerà tra i 10 e i 20 a causa del tempo aspettato senza leader prima).
+
+b+c) Scenario con tanto tempo senza leader. Modificare il file properties e mettere come max election timeout 150 (come il minimo). Questo scenario andrà ripetuto svariate volte, finché non otterremo una run sufficientemente sfigata. Avviare una simulazione con 7 server. Crashare il leader, e aspettare mentre i server si pestano i piedi tra loro e non riescono a eleggere un leader. Ripetere mettendo 150-175, e far notare come su più run si migliora ma si può fare meglio.
+
+d) Scenario con log vastamente diversi. Avviare una simulazione con 5 server. Crashare tre follower. Applicare due entry al leader. Ora la situazione sarà la seguente:
+
+L   1 1
+F   1 1
+(F) 
+(F)
+(F) 
+
+Chiaramente i due 1 1 non saranno committati (perché il leader non riesce ad avere una maggioranza), ma allo stesso tempo verranno inseriti sul leader e sull'altro follower in quanto comunque il leader deteneva già la maggioranza e non la va a perdere a caso.
+Ora crashare anche l'altro follower e il leader (in quest'ordine). Far tornare gli altri 3 follower, fare eleggere un leader, e committare due entry. Ora far tornare il follower precedentemente crashato e commentare la sostituizione dei suoi 1 1 con 2 2 (regola del "più nuovo"). (Dai test sta cosa non sembra troppo funzionare in questo momento....)
+
+
+-----
+
+Parte del paper relativa alla valutazione delle performance.
+
+1) To measure leader election, we repeatedly crashed the leader of a cluster of five servers and timed how long it took to detect the crash and elect a new leader (see Figgure 16).
+
+2) To generate a worst-case scenario, the servers in each trial had different log lengths, so some candidates were not eligible to become leader. 
+
+3) Furthermore, to encourage split votes, our test script triggered a synchro- nized broadcast of heartbeat RPCs from the leader before terminating its process (this approximates the behavior of the leader replicating a new log entry prior to crashing). The leader was crashed uniformly randomly within its heartbeat interval, which was half of the minimum election timeout for all tests. Thus, the smallest possible downtime was about half of the minimum election time- out.
+
+The top graph in Figure 16 shows that a small amount of randomization in the election timeout is enough to avoid split votes in elections. In the absence of random- ness, leader election consistently took longer than 10 sec- onds in our tests due to many split votes. Adding just 5ms of randomness helps significantly, resulting in a median downtime of 287ms. Using more randomness improves worst-case behavior: with 50ms of randomness the worst- case completion time (over 1000 trials) was 513ms.
+
+The bottom graph in Figure 16 shows that downtime can be reduced by reducing the election timeout. With an election timeout of 12–24ms, it takes only 35ms on average to elect a leader (the longest trial took 152ms). However, lowering the timeouts beyond this point violates Raft’s timing requirement: leaders have difficulty broad- casting heartbeats before other servers start new elections. This can cause unnecessary leader changes and lower overall system availability. We recommend using a conservative election timeout such as 150–300ms; such time- outs are unlikely to cause unnecessary leader changes and will still provide good availability.
+
+When the leader at the top comes to power, it is possible that any of scenarios (a–f) could occur in follower logs. Each box represents one log entry; the number in the box is its term. A follower may be missing entries (a–b), may have extra uncommitted entries (c–d), or both (e–f). For ex- ample, scenario (f) could occur if that server was the leader for term 2, added several entries to its log, then crashed before committing any of them; it restarted quickly, became leader for term 3, and added a few more entries to its log; before any of the entries in either term 2 or term 3 were committed, the server crashed again and remained down for several terms.

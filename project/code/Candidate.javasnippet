@@ -1,0 +1,26 @@
+private static long randomElectionTimeout() {
+    public static Behavior<Raft> \
+        beginElection(ActorContext<Raft> ctx, Servers servers, CandidateState state);
+    
+    private static void \
+        startElectionTimer(ActorContext<Raft> ctx, TimerScheduler<Raft> timers);
+    
+    public static void  \
+        sendRequestVote(ActorContext<Raft> ctx, SeqNum seqNum,
+        ActorRef<Raft> recipient, CandidateState state, boolean isRetry);
+    
+    private static Behavior<Raft> \
+        onRPCTimeout(ActorContext<Raft> ctx, SeqNum seqNum,
+        CandidateState state, ActorRef<Raft> recipient);
+
+    private static Behavior<Raft> \
+        onElectionTimeout(ActorContext<Raft> ctx, Servers servers,
+        CandidateState state);
+    
+    private static Behavior<Raft> \ 
+        onVote(ActorContext<Raft> ctx TimerScheduler<Raft> timers,
+        Servers servers, SeqNum seqNum, Votes votes,
+        CandidateState state, RequestVoteRPCResponse msg);
+    
+     // (...implementation of onAppendEntries, crash and stop from superclass
+}

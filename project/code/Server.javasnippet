@@ -1,0 +1,16 @@
+public class Server {
+    (...)
+    protected static Behavior<Raft> \
+        onVote(ActorContext<Raft> ctx, State state, RequestVoteRPC msg);
+        
+    protected static Behavior<Raft> \
+        stop(ActorContext<Raft> ctx, Servers servers, State state);
+        
+    protected static Behavior<Raft> \ 
+        crash(ActorContext<Raft> ctx, Servers servers, State state, Crash msg);
+    protected static Behavior<Raft> stop(ActorContext<Raft> ctx, Servers servers, State state) {
+        ctx.getLog().info("Received stop command. State is:\n" + state);
+
+        return Offline.waiting(ctx, servers, state);
+    }
+}

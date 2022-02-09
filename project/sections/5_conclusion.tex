@@ -1,0 +1,8 @@
+\section{Conclusion and future work}
+\label{conclusion}
+
+This report illustrated the capabilities of Raft, a powerful and straightforward protocol for applications requiring a relaxed version of distributed consensus. Using the Java language and the Akka library, we implemented a full-fledged Raft cluster simulation that closely follows the paper's theory and guidelines. Halfway through the project, we realized that the protocol would be easier to approach with a functional paradigm. Thus, we switched our implementation to the newer Akka Typed library and rewrote our project to closely match the behavior of a state machine.
+
+We supplemented our cluster with a GUI written in JavaFX, which allowed continuous monitoring of the state of each server in the cluster and allowed direct command sending. All of this was done while keeping the amount of source lines of code relatively low (around 2500 \texttt{SLOC}s), while allowing for a strong decoupling between the GUI and the protocol. By doing such work, we confirmed the Raft paper's results on understandability and ease of use, which were at the core of their research in providing an approachable alternative to other distributed consensus algorithms such as Paxos.
+
+Future work for this project may include the addition of dynamic membership and log compaction, two features that were present at the end of the paper that we chose not to implement due to time constraints. Moreover, the inclusion of a client actor to the cluster could be an interesting addition, with the GUI being changed to act as an interface to the client itself.

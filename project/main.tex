@@ -1,0 +1,131 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Wenneker Assignment
+% LaTeX Template +
+% Structure Specification File
+% Version 2.0 (12/1/2019)
+%
+% This template originates from:
+% http://www.LaTeXTemplates.com
+%
+% Authors:
+% Vel (vel@LaTeXTemplates.com)
+% Frits Wenneker
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[11pt]{scrartcl} % Font size
+
+% Package declarations
+\usepackage{algorithm2e}
+\usepackage{amsmath, amsfonts, amsthm} % Math packages
+\usepackage{listings} % Code listings, with syntax highlighting
+\usepackage{amsthm}
+\usepackage{todonotes}
+\usepackage[english]{babel} % English language hyphenation
+\usepackage{graphicx} % Required for inserting images
+\usepackage{booktabs} % Required for better horizontal rules in tables
+\usepackage{enumitem} % Required for list customisation
+\usepackage{geometry} % Required for adjusting page dimensions and margins
+\usepackage[utf8]{inputenc} % Required for inputting international characters
+\usepackage[T1]{fontenc} % Use 8-bit encoding
+\usepackage{fourier} % Use the Adobe Utopia font for the document
+\usepackage{sectsty} % Allows customising section commands
+\usepackage{scrlayer-scrpage} % Required for customising headers and footers
+\usepackage[a-1b]{pdfx}
+\usepackage[pdfa]{hyperref}
+\usepackage{url}
+\usepackage{soul}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage[capitalise]{cleveref}
+\usepackage{fancyvrb}
+\usepackage{javahighlight}
+
+\theoremstyle{plain}
+
+%\newtheorem*{theorem*}{Theorem}
+%\newtheorem{theorem}{Theorem}
+
+%\newtheorem*{definition*}{Definition}
+%\newtheorem{definition}{Definition}
+
+%\graphicspath{{Figures/}{./}} % Specifies where to look for included images (trailing slash required)
+
+%\numberwithin{equation}{section} % Number equations within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
+%\numberwithin{figure}{section} % Number figures within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
+%\numberwithin{table}{section} % Number tables within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
+
+\setlength\parindent{0pt} % Removes all indentation from paragraphs
+
+\setlist{noitemsep} % No spacing between list items
+
+\geometry{
+	paper=a4paper, % Paper size
+	top=2.5cm, % Top margin
+	bottom=2.5cm,%3cm, % Bottom margin
+	left=2cm,%3cm, % Left margin
+	right=2cm,%3cm, % Right margin
+	headheight=0.75cm, % Header height
+	footskip=1.5cm, % Space from the bottom margin to the baseline of the footer
+	headsep=0.75cm, % Space from the top margin to the baseline of the header
+	%showframe, % Uncomment to show how the type block is set on the page
+}
+
+\sectionfont{\vspace{6pt}\centering\normalfont\scshape} % \section{} styling
+\subsectionfont{\normalfont\bfseries} % \subsection{} styling
+\subsubsectionfont{\normalfont\itshape} % \subsubsection{} styling
+\paragraphfont{\normalfont\scshape} % \paragraph{} styling
+
+%\ohead*{} % Right header
+%\ihead*{} % Left header
+%\chead*{} % Centre header
+
+%\ofoot*{} % Right footer
+%\ifoot*{} % Left footer
+%\cfoot*{\pagemark} % Centre footer
+
+%% This declares a command \Comment
+%% The argument will be surrounded by /* ... */
+%% Used for pseudocode
+\SetKwComment{Comment}{/* }{ */}
+%% For adding 'function-like captions' as algorithms captions
+\RestyleAlgo{ruled}
+
+
+\title{	
+	\normalfont\normalsize
+	\textsc{University of Trento}\\ %
+	\vspace{6pt}%
+	\rule{\linewidth}{0.5pt}%
+	\vspace{15pt} %
+	{\huge Raft Simulator Evaluation}\\ % yeah, we could find a better title
+	\vspace{6pt}%
+	\rule{\linewidth}{2pt}\\
+	\vspace{6pt}
+}
+
+\author{\LARGE Paolo Chistè, Matteo Franzil, Andrea Stedile}
+
+\date{\normalsize\today}
+
+\begin{document}
+
+\maketitle % Print the title
+
+\input{sections/0_abstract.tex}
+\input{sections/1_introduction.tex}
+\input{sections/2_background.tex}
+\input{sections/3_architecture.tex}
+\input{sections/4_demo.tex}
+\input{sections/5\_conclusion.tex}
+
+\clearpage
+\newpage
+
+\bibliographystyle{IEEEtran-sorted-tt}
+\bibliography{biblio}
+
+\end{document}

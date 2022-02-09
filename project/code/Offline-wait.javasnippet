@@ -1,0 +1,10 @@
+public static Behavior<Raft> waiting(ActorContext<Raft> ctx, Servers servers, State state) {
+    var event = new StateChange(ctx.getSelf(), ctx.getSystem().uptime(), StateChange.State.OFFLINE);
+    var publish = new EventStream.Publish<>(event);
+    ctx.getSystem().eventStream().tell(publish);
+
+    return Behaviors.receive(Raft.class)
+            .onMessage(Start.class, unused -> Follower.waitForAppendEntries(ctx, servers, FollowerState.fromAnyState(state)))
+            .onAnyMessage(msg -> Behaviors.ignore())
+            .build();
+}

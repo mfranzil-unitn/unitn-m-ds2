@@ -1,0 +1,178 @@
+\section{Simulator/Implementation Architecture}
+\label{architecture}
+
+% From the very start of the project, we had a goal in mind: create a credible, reliable and efficient simulation of a Raft cluster without shouldering the burden of implementing true network connections, instead opting for a local simulation.
+The ultimate goal of our project was to create a simple Graphical User Interface, enabling the user to:
+\begin{itemize}
+    \item Create a Raft cluster composed by the desired number of servers;
+    \item Submit new commands to be replicated by the servers;
+    \item Simulate a crash (and recovery) of a server;
+    \item Visualize any change in state of the servers.
+\end{itemize}
+
+Initially, we started the development using Python and the Pykka actor library \cite{pykka}, but we have later rewritten the code in Java using the Akka \cite{akka} actor library.
+%, a combination in which we felt confident, as we had prior experience with it during past courses.
+Eventually, we have settled on using Akka Typed\footnote{\url{https://doc.akka.io/docs/akka/2.5/typed/index.html}} as our API of choice, which is convenient for implementing state machines.
+% This API is organized around a functional programming style; it favors static methods that modify only the state of their arguments, without side-effects.
+% Non è vero
+
+
+As shown in the figure below, the codebase is organized in two packages: the \texttt{Raft} package contains the code at the heart of the protocol; the \texttt{gui} package implements the simulator.
+
+\begin{Verbatim}[samepage]
+    src/main/it/unitn/ds2
+       |- gui
+       |  |- commands
+       |  |- components
+       |  |- model
+       |  |- view
+       |- raft
+          |- events
+          |- fields
+          |- properties
+          |- rpc
+          |- simulation
+          |- statemachinecommands
+          |- states
+\end{Verbatim}
+
+\subsection{The \texttt{raft} package}
+
+The \texttt{raft} package is the core of our project and contains all the required classes for the protocol to run without intervention. As a design decision, we chose not to implement a client: instead, commands and events are sent and propagated through a \texttt{CommandBus} and \texttt{EventBus} provided by the \texttt{gui} package. Implementing an actual client with logic (e.g. for making requests to the current leader, retrying, etc...) is left as future work.
+
+The main subfolder of the package is the \texttt{states} folder. To truthfully implement Raft's states and the three different roles (\texttt{Candidate}, \texttt{Leader}, and \texttt{Follower}), we implemented an abstract class, \texttt{State} and a base class, \texttt{Server}, that are subclassed by each of the three roles in order to get the correct subset of functionality for each of them.
+
+\inputjava{code/State.javasnippet}{1}{150}
+
+Concretely, the \texttt{State} class is an abstract class that implements volatile and persistent states that pertain to all three roles. Each instance variable is a different class in itself, implementing a \texttt{ContextAware} interface to allow observability.
+
+On the other hand, the \texttt{Server} class is a full-fledged class. It implements \texttt{Behavior}s that are used by all three subclasses.
+
+\inputjava{code/Server.javasnippet}{1}{10}
+
+In the Akka Typed API, Actors represent finite state machines and must be modeled as such.\footnote{\url{https://doc.akka.io/docs/akka/current/typed/fsm.html}}. Static methods in the \texttt{Server} class and subclasses return \texttt{Behavior}s that represent what the actor will be able to do once the method has finished executing. In other words, actors execute actions, and at the end, the actor will move in another state, represented as a set of \texttt{Behavior}s. 
+
+This model is very easy to adapt to the Raft protocol. In this case, the generic \texttt{Server} behaviors include primitives for sending out leader votes, stopping, and crashing.
+
+As mentioned before, each role subclasses both the \texttt{State} and \texttt{Server} classes. For example, the \texttt{Leader} role is represented by the \texttt{LeaderState} and \texttt{Leader} classes. \cref{arch:follower,arch:candidate,arch:leader} detail more clearly what each role can and can not do in the simulation.
+
+Next, \cref{arch:rpc,arch:appentries} discuss more in depth about two key parts of the implementation: the usage of RPCs and the \texttt{AppendEntries} message exchange.
+
+Finally, a special role was inserted for simulation purposes: the \texttt{Offline} role. It represents either a crashed or non-started server, and supports behaviors that allow it to get informed of newcomers in the cluster and then start. This implementation is discussed in \cref{arch:failures}.
+
+\subsubsection{Follower}
+\label{arch:follower}
+
+The \texttt{Follower} class contains most of the basic logic required for a Raft follower to operate.
+
+\inputjava{code/Follower.javasnippet}{1}{150}
+
+When a server becomes a follower, it defaults to the usual behavior of waiting for \texttt{appendEntries} heartbeats from the current leader. This is defined in the \texttt{waitForAppendEntries} method, which returns the following Behavior:
+
+\inputjava{code/Follower-defBeh.javasnippet}{1}{150}
+
+This behavior comprises the following actions. First and foremost, it is a behavior with timers, and as the protocol requires, it sets a timer that when expired will start a new election. During this timer, clearly, the follower will need to respond to different types of messages. Excluding the obvious \texttt{Crash} and \texttt{Stop}, a follower can receive vote requests (\texttt{RequestVoteRPC}), election timeout messages (which are auto-sent by the expiring timer), and \texttt{appendEntries} messages. 
+
+These methods implement exactly the protocol requirements. On a \texttt{RequestVoteRPC}, the Follower calls his parent class's \texttt{vote} method. On a \texttt{ElectionTimeout}, the follower becomes a candidate and starts an election. \texttt{AppendEntries} messages comprise probably the most important part of the entire project, due to their vital role in several key parts of the protocol. More information on their implementation can be found in \cref{arch:appentries}.
+
+\subsubsection{Candidate}
+\label{arch:candidate}
+
+Once a server receives an \texttt{ElectionTimeout}, it becomes a candidate and starts querying other servers actively for their roles. In our candidate implementation, this is achieved via the \texttt{sendRequestVote} method, which broadcasts a \texttt{RequestVoteRPC} to the cluster and waits for a response from at least the majority of the servers. 
+
+\inputjava{code/Candidate.javasnippet}{1}{150}
+
+As votes arrive, the candidate -- which preserves its behavior across methods with the \texttt{Behaviors.same()} shorthand -- calls the \texttt{onVote} method and dynamically verifies if the majority requirements are met. Clearly, elections may or may not conclude successfully. Often, the election might timeout, prompting the candidate to start another one with \texttt{beginElection}, or it might receive an \texttt{appendEntries} from a new leader, effectively reverting it to the follower state.
+
+If the candidate were to be elected, then it invokes the leader's \texttt{elected} method, and switches role. \cref{arch:leader} discusses what happens at this point.
+
+\subsubsection{Leader}
+\label{arch:leader}
+
+The leader role is arguably the most powerful in the protocol, yet it is the most delicate. Yielding absolute power over the log, operations over it must be carefully assessed before proceeding. Eventual crashes and delays complicate the protocol, requiring some changes and some architectural choices in order to make the protocol work correctly. Details of these issues can be found in \cref{arch:failures}.
+
+Once the crashes are dealt with, however, the leader role becomes surprisingly simple to implement.
+
+\inputjava{code/Candidate.javasnippet}{1}{150}
+
+Leader logic starts with the aforementioned \texttt{elected} method. Once elected, the leader's log is ``the truth'', and other followers must obey to this rule and have their logs changed, updating their entries and eliminating extraneous ones. Moreover, eventual leaders are deposed by the same \texttt{appendEntries} messages sent. Leaders send their \texttt{appendEntries} messages with \texttt{appendEntriesRPC} and process their responses with \texttt{onAppendEntriesResult}. These methods closely follow the paper's implementation and guidelines. \cref{arch:appentries} deals with this matter more in depth.
+
+Finally, leaders have a special method, \texttt{onCommand}, which allows receiving new  entries from the GUI and adding them to the log. It implements stashing to correctly process incoming commands in a FIFO-like fashion.
+
+\subsubsection{RPCs}
+\label{arch:rpc}
+
+A whole section must be reserved to the implementation of communication between servers and the implications that our implementation has. 
+
+As anticipated through previous sections, servers use RPCs to communicate between each other. However, this approach was not the first that we took into account. Indeed, in the very first versions of the project, we opted to use regular \texttt{tell} primitives.
+
+In Akka, \texttt{tell} methods can be used to send messages in a ``fire-and-forget'' fashion, disregarding the status of the recipient. Instead, \texttt{ask} methods send a message and return a future, which can be awaited until timeout or a reply is received. This allows a finer control over the behaviors of the actors.\footnote{\url{https://doc.akka.io/docs/akka/current/typed/interaction-patterns.html}, section ``request-response with ask between two actors''}.
+
+\inputjava{code/Leader-rpc.javasnippet}{1}{150}
+
+The above code -- written with the functional paradigm -- is implemented at the end of the \texttt{appendEntries} \texttt{RPC} method of the \texttt{Leader} class. It specifies the target of the RPC, the response timeout, what to send, and how to act once the response arrives (or times out).
+
+\subsubsection{\texttt{AppendEntries} messages and logs}
+\label{arch:appentries}
+
+\texttt{AppendEntries} messages are the core of the Raft protocol. They have multiple functions: they double as heartbeats, sent by leaders to reinforce their power over the current term, inform old leaders that they were deposed, and expire other servers' election timeouts. However, their first and foremost usage is to update the local log of the other servers.
+
+\texttt{AppendEntries} messages are exchanged with RPC as described in \cref{arch:rpc}, and are equipped with the following parameters:
+
+\inputjava{code/AppendEntries.javasnippet}{1}{150}
+
+When a leader is elected, an \texttt{AppendEntries} message is sent to all the cluster. As mentioned in previous sections, this message will:
+
+\begin{itemize}
+    \item depose old leaders, should they realize that their \texttt{currentTerm} is greater than the leader's;
+    \item restart all other servers' election timeouts;
+    \item inform them of the last committed entry by the leader;
+    \item what the leader expects the client to have in their log (\texttt{prevLogIndex} and \texttt{prevLogTerm}).
+\end{itemize}
+
+Followers receiving this message with \texttt{ask} will invoke their \texttt{onAppendEntries} method, which implements the protocol's logic as detailed in Figure 2, p. 4 \cite{ongaro_search_nodate} of the paper.
+
+This means that the receiver will respond \textbf{false} if their term < \texttt{currentTerm} (they weren't aware of the new term) or if their log doesn’t contain an entry at \texttt{prevLogIndex} whose term matches \texttt{prevLogTerm} (they were lagging behind newer additions to the log). It will check for conflicts in the entries, eventually deleting them and decreasing the log index.
+
+The receiver will then construct a response (also in the form of a RPC), which will be then sent to the leader. This ping-pong will continue until the follower will respond true to the leader, meaning that now the two logs match.
+
+All of this logic is made possible and easier thanks to subclassing. \texttt{LogEntries} are a class on their own, containing the command for the state machine and the term.
+
+\subsubsection{Failure handling}
+\label{arch:failures}
+
+We conclude the section about the \texttt{raft} package by briefly discussing about the failure model we chose to take into account and how it is implemented.
+
+As mentioned before, we supplemented the three status presented in the paper -- \texttt{Candidate}, \texttt{Leader}, and \texttt{Follower} -- with a fourth one, \texttt{Offline}.
+
+The \texttt{Offline} role represents either an unstarted server, or a crashed one. From a logical perspective, we can consider these two ``states'' as a single one, one in which the corresponding server lost its transient state but retained its permanent one. Moreover, an offline server must ignore all messages but the ones required for it to restart.
+
+\inputjava{code/Leader-rpc.javasnippet}{1}{150}
+
+This is achieved by making use of the \texttt{Behaviors.ignore()} shorthand and a \texttt{Behavior} builder that only accepts \texttt{Start} messages. When in this state, RPCs directed at the server will fail, prompting them to retry such RPCs until they either give up or the server comes back online.
+
+\subsection{The \texttt{gui} package}
+This package contains code for the application that allows to run the simulation, and to interact with it. The GUI is written with \texttt{JavaFX}, basically the standard for implementing GUIs in Java. The entry point for the application is the \texttt{App} class.
+
+\inputjava{code/App.javasnippet}{13}{23}
+
+The class creates an instance of \texttt{ApplicationContext}, which then creates a new \texttt{ActorSystem}, which is the component responsible for actually simulating our cluster.
+
+\inputjava{code/ApplicationContext.javasnippet}{5}{14}
+
+All buttons in the GUI generate an event when interacted with. The events are passed through an \texttt{EventBus}; this class is used to relay all events towards the class \texttt{SimulationController}, which is responsible for changing the simulation state. Control over the simulation is implemented with special messages that are sent to the actors inside the simulation. The actor receives the control message and acts accordingly.
+
+For example, this is the code that responds to the event to stop the simulation: 
+\inputjava{code/SimulationController.javasnippet}{88}{92}
+
+which results in this method getting called on the \texttt{Server}:
+
+\inputjava{code/Server.javasnippet}{11}{15}
+
+To update the contents of the server status screen, we use an \texttt{EventBus} that relies events from the simulation to the GUI code. The components subscribe to an event, and when the event is fired they execute a listener to update the contents of the interface. For example, the following lines in the declaration of \texttt{LocalLogView}:
+
+\inputjava{code/LocalLogView.javasnippet}{18}{22}
+subscribe to the events that regard the spawn of a new actor and the updating of the local log on an actor.
+
+\clearpage
+\newpage
